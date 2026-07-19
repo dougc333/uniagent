@@ -56,7 +56,9 @@ After reconnecting:
 
 This produces `train_colab_host.parquet`, `test_colab_host.parquet`, and
 `all_colab_host.parquet`. Their setup commands reset `/workspace` before every
-episode and copy in the appropriate starter task.
+episode and copy in the appropriate starter task. If a GitHub clone omitted
+the globally ignored base `*.parquet` files, this command first reconstructs
+them from the bundled generated task and grading assets.
 
 ## 4. Run the native A100 experiment
 

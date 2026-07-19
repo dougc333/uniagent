@@ -5,10 +5,116 @@ from __future__ import annotations
 
 import argparse
 import copy
+import json
 import shlex
 from pathlib import Path
 
 EXAMPLE_ROOT = Path(__file__).resolve().parent
+
+
+def rebuild_base_parquets(dataset_cls, generated_root: Path) -> None:
+    """Rebuild git-ignored Parquet files from the bundled generated assets."""
+    from generate_dataset import tar_gz_bytes
+
+    data_dir = generated_root / "data"
+    tasks_path = data_dir / "tasks.jsonl"
+    manifest_path = generated_root / "manifest.json"
+    if not tasks_path.is_file():
+        raise FileNotFoundError(
+            f"Missing both base Parquet data and {tasks_path}. "
+            "Upload the complete examples/mixed_code_react/generated directory."
+        )
+
+    previews = [
+        json.loads(line)
+        for line in tasks_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    if len(previews) != 20:
+        raise ValueError(f"Expected 20 task previews in {tasks_path}, found {len(previews)}")
+
+    manifest = {}
+    if manifest_path.is_file():
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    source_revision = manifest.get("source_revision") or ""
+
+    samples_by_split: dict[str, list[dict]] = {"train": [], "test": []}
+    all_samples: list[dict] = []
+    for preview in previews:
+        split = preview["split"]
+        if split not in samples_by_split:
+            raise ValueError(f"Unexpected split {split!r} for {preview['task_id']}")
+
+        task_id = preview["task_id"]
+        task_type = preview["task_type"]
+        grading_dir = generated_root / "grading" / task_id
+        solution_dir = grading_dir / "solution"
+        tests_dir = grading_dir / "tests"
+        if not solution_dir.is_dir() or not tests_dir.is_dir():
+            raise FileNotFoundError(
+                f"Missing bundled grading assets for {task_id}; "
+                "upload the complete generated directory."
+            )
+
+        setup_commands = [
+            "mkdir -p /workspace",
+            f"cp -a /opt/tasks/{task_id}/. /workspace/",
+        ]
+        if task_type == "react":
+            setup_commands.append("ln -sfn /opt/react-runtime/node_modules /workspace/node_modules")
+        setup_commands.append("cd /workspace")
+
+        metadata = {
+            "task_id": task_id,
+            "title": preview["title"],
+            "task_type": task_type,
+            "source_path": preview["source_path"],
+            "source_revision": source_revision,
+            "workdir": "/workspace",
+            "task_config": {
+                "agent": {"timeout_sec": 120.0},
+                "verifier": {"timeout_sec": 120.0},
+            },
+            "solution_archive": tar_gz_bytes(solution_dir),
+            "tests_archive": tar_gz_bytes(tests_dir),
+            "solve_relpath": "solve.sh",
+            "test_relpath": "test.sh",
+        }
+        sample = {
+            "prompt": preview["prompt"],
+            "agent_name": preview["agent_name"],
+            "extra_info": {
+                "task_id": task_id,
+                "task_type": task_type,
+                "data_source": "cssbenchmark-aks-mixed",
+                "source_root": "bundled-generated-assets",
+                "source_path": preview["source_path"],
+                "tools_kwargs": {
+                    "env": {"post_setup_cmd": " && ".join(setup_commands)},
+                    "reward": {
+                        "name": "terminal_bench_v2",
+                        "eval_timeout": 120.0,
+                        "metadata": metadata,
+                    },
+                },
+            },
+        }
+        all_samples.append(sample)
+        samples_by_split[split].append(sample)
+
+    expected = {"all": 20, "train": 16, "test": 4}
+    datasets = {
+        "all": all_samples,
+        "train": samples_by_split["train"],
+        "test": samples_by_split["test"],
+    }
+    data_dir.mkdir(parents=True, exist_ok=True)
+    for split, rows in datasets.items():
+        if len(rows) != expected[split]:
+            raise AssertionError(f"{split}: expected {expected[split]} rows, found {len(rows)}")
+        destination = data_dir / f"{split}.parquet"
+        dataset_cls.from_list(rows).to_parquet(str(destination))
+        print(f"Rebuilt {len(rows)} rows at {destination}", flush=True)
 
 
 def host_setup_command(task_id: str, repo_root: Path, node_modules: Path) -> str:
@@ -81,6 +187,19 @@ def main() -> None:
 
     output_dir.mkdir(parents=True, exist_ok=True)
     expected = {"all": 20, "train": 16, "test": 4}
+    missing_sources = [
+        source_dir / f"{split}.parquet"
+        for split in expected
+        if not (source_dir / f"{split}.parquet").is_file()
+    ]
+    if missing_sources:
+        print(
+            "Base Parquet files are absent (they may have been omitted by .gitignore); "
+            "rebuilding them from bundled generated assets.",
+            flush=True,
+        )
+        rebuild_base_parquets(Dataset, source_dir.parent)
+
     for split, expected_rows in expected.items():
         source = source_dir / f"{split}.parquet"
         dataset = Dataset.from_parquet(str(source))
