@@ -1,0 +1,5 @@
+generated/data
+generated/grading
+generated/manifest.json
+__pycache__
+*.pyc

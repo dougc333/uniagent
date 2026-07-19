@@ -1,0 +1,32 @@
+# UNSAFE: coding commands execute directly in the Colab VM that owns the model.
+# Keep concurrency at one and do not expose credentials or mount Google Drive.
+- name: swe_agent
+  _target_: uni_agent.agent_loop.UniAgentLoop
+  tool_parser: hermes
+  concurrency: 1
+  log_dir: /tmp/uni-agent-mixed-code-react-colab
+  mask_abnormal_exit_traj: false
+
+  interaction:
+    action_timeout: 120
+    max_turns: 12
+
+  env:
+    deployment:
+      type: host
+      timeout: 180
+      startup_timeout: 120
+    tool_install_dir: /tmp/uni-agent-tools
+    env_variables:
+      PAGER: cat
+      GIT_PAGER: cat
+      PIP_PROGRESS_BAR: "off"
+
+  tools:
+    - name: execute_bash
+    - name: str_replace_editor
+    - name: submit
+
+  reward:
+    name: terminal_bench_v2
+    eval_timeout: 120

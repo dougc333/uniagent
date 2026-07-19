@@ -1,0 +1,5 @@
+# Primary button
+
+Render the page at exactly 800×600 CSS pixels with devicePixelRatio 1. Remove all default page margins and apply border-box sizing to every element and pseudo-element. The body background is #f3f4f6 and the fallback font is Arial, sans-serif. The .stage element must fill the entire viewport and center the button both horizontally and vertically. Apply all button appearance and sizing through CSS and remove the browser's default button appearance. The button must be exactly 160px wide and 48px high, including border and padding. Give it zero padding, no border, a 10px radius, a solid #2563eb background, and shadow 0 6px 14px rgba(37, 99, 235, 0.24). Its text is #ffffff, Arial with sans-serif fallback, 16px, weight 700, and line-height 1. Center the text horizontally and vertically using flexbox and use cursor: pointer. On hover, change the background to #1d4ed8. On focus-visible, show a 3px solid #93c5fd outline with a 3px offset. Do not use external fonts, images, JavaScript, transforms, transitions, or animations.
+
+Implement `src/styles.css`. You may adjust `src/App.jsx` only if needed for semantic React markup.

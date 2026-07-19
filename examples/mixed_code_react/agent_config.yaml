@@ -1,0 +1,36 @@
+- name: swe_agent
+  _target_: uni_agent.agent_loop.UniAgentLoop
+  tool_parser: hermes
+  concurrency: 8
+  log_dir: /tmp/uni-agent-mixed-code-react
+  mask_abnormal_exit_traj: false
+
+  interaction:
+    action_timeout: 120
+    max_turns: 30
+
+  env:
+    deployment:
+      type: local
+      image: uni-agent-mixed-code-react:latest
+      container_runtime: docker
+      command: >-
+        python3 -m swerex.server
+        --host 0.0.0.0
+        --port {port}
+        --auth-token {token}
+      timeout: 180
+      startup_timeout: 180
+    env_variables:
+      PAGER: cat
+      GIT_PAGER: cat
+      PIP_PROGRESS_BAR: "off"
+
+  tools:
+    - name: execute_bash
+    - name: str_replace_editor
+    - name: submit
+
+  reward:
+    name: terminal_bench_v2
+    eval_timeout: 120

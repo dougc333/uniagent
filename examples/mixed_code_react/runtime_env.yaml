@@ -1,0 +1,11 @@
+working_dir: ./
+excludes:
+  - ".git/"
+  - "examples/mixed_code_react/generated/"
+  - "verl/.git/"
+
+env_vars:
+  PYTHONPATH: "verl"
+  PYTHONUNBUFFERED: "1"
+  TOKENIZERS_PARALLELISM: "true"
+  VLLM_USE_V1: "1"

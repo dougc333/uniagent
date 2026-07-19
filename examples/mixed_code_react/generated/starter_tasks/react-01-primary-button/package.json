@@ -1,0 +1,15 @@
+{
+  "name": "uni-agent-react-task",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite"
+  },
+  "dependencies": {
+    "vite": "7.0.6",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "@vitejs/plugin-react": "4.6.0"
+  }
+}

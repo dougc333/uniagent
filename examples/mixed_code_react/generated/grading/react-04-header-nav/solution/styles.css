@@ -1,0 +1,62 @@
+#root { display: contents; }
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: Arial, sans-serif;
+}
+
+.site-header {
+  display: grid;
+  width: 100%;
+  height: 72px;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 0 32px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+a {
+  text-decoration: none;
+}
+
+.brand {
+  color: #111827;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+nav {
+  display: flex;
+  gap: 28px;
+}
+
+nav a {
+  color: #4b5563;
+  font-size: 14px;
+}
+
+nav a.active {
+  color: #2563eb;
+  font-weight: 700;
+}
+
+button {
+  justify-self: end;
+  width: 96px;
+  height: 38px;
+  border: 0;
+  border-radius: 8px;
+  background: #111827;
+  color: #ffffff;
+  font-weight: 700;
+}
